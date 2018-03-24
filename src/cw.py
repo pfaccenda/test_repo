@@ -156,8 +156,10 @@ def main():
     describe_dbinstance( sys.argv[1] )
     modify_dbinstance_setting(sys.argv[1] )
 
-    print "v2.0"
+    print "v2.1"
 
 if __name__ == '__main__':
     main()
+
+
 
