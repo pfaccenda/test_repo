@@ -96,7 +96,6 @@ def add_tag_to_resource( dbname ):
 def describe_dbinstance(dbname):
     client = boto3.client('rds')
     response = client.describe_db_instances( DBInstanceIdentifier=dbname )
-    # print response
     print "------------------------- ", "describe_dbinstance", dbname,  "------------------------- "
     d = response
     for k, v in d.items():
@@ -107,6 +106,30 @@ def describe_dbinstance(dbname):
 
     print "------------------------- ", "describe_dbinstance", dbname,  "------------------------- "
     print ""
+
+def modify_dbinstance_setting(dbname):
+    client = boto3.client('rds')
+
+    response = client.describe_db_instances(DBInstanceIdentifier=dbname)
+    d = response['DBInstances'][0]
+    print "Original value of MonitoringInterval for", dbname, "is", d.get('MonitoringInterval')
+
+    response = client.modify_db_instance( DBInstanceIdentifier=dbname,
+                                          MonitoringInterval=15 )
+
+    response = client.describe_db_instances( DBInstanceIdentifier=dbname )
+    print response
+    print "------------------------- ", "modify_dbinstance_setting", dbname,  "------------------------- "
+    d = response['DBInstances']
+    for index in range(len(response['DBInstances'])):
+        d = response['DBInstances'][index]
+        print "MonitoringInterval for ", dbname, "changed to", d.get('MonitoringInterval')
+    print "------------------------- ", "modify_dbinstance_setting", dbname,  "------------------------- "
+
+    print ""
+
+
+
 
 
 
@@ -131,7 +154,9 @@ def main():
 
     add_tag_to_resource( 'arn:aws:rds:us-east-1:546771319769:db:upefrdsdb01')
     describe_dbinstance( sys.argv[1] )
+    modify_dbinstance_setting(sys.argv[1] )
 
+    print "v2.0"
 
 if __name__ == '__main__':
     main()
