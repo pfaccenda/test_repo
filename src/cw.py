@@ -70,19 +70,19 @@ def describe_alarms( alarm_name ):
 
 # add a custom tag to an rds dbinstance
 def add_tag_to_resource( dbname,
-                         KeyName='upefKey',
-                         KeyValue="default"):
+                         mykeyname='upefKey',
+                         mykeyvalue="default"):
 
-    if KeyValue == "default":
-        key_value =  str(datetime.datetime.now())
+    if mykeyvalue == "default":
+        mykeyvalue =  str(datetime.datetime.now())
 
     client = boto3.client('rds')
     response = client.add_tags_to_resource(
         ResourceName=dbname,
         Tags=[
             {
-                'Key': KeyName,
-                'Value': KeyValue
+                'Key': mykeyname,
+                'Value': mykeyvalue
 
             }
         ]
@@ -161,7 +161,7 @@ def main():
         describe_dbinstance( sys.argv[1] )
         modify_dbinstance_setting(sys.argv[1] )
 
-    print "v2.3"
+    print "v2.4"
 
 if __name__ == '__main__':
     main()
