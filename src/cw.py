@@ -5,6 +5,7 @@ import os, sys
 import json
 import datetime
 
+# list all metrics about all rds db instances
 def list_all():
     client = boto3.client('cloudwatch')
     response = client.list_metrics(Namespace='AWS/RDS')
@@ -21,12 +22,9 @@ def list_all():
 
         print ""
 
-
+# list a specific metric for an rds dbinstance, e.g.
+# aws cloudwatch list-metrics --namespace  "AWS/RDS"   --metric-name FreeStorageSpace --dimensions #"Name="DBInstanceIdentifier",Value=upefrdsdb01"
 def list_metric(dbinstance_name,metric_name):
-    # aws cloudwatch list-metrics --namespace  "AWS/RDS"   --metric-name FreeStorageSpace --dimensions #"Name="DBInstanceIdentifier",Value=upefrdsdb01"
-
-    dbinstance_name = 'upefrdsdb01'
-
     client = boto3.client('cloudwatch')
     response = client.list_metrics(
         Namespace='AWS/RDS',
@@ -50,10 +48,9 @@ def list_metric(dbinstance_name,metric_name):
         print ""
 
 
+
+
 # aws cloudwatch describe-alarms-for-metric --namespace  "AWS/RDS"   --metric-name FreeStorageSpace --dimensions #"Name="DBInstanceIdentifier",Value=upefrdsdb01"
-
-# aws cloudwatch put-metric-alarm --alarm-name upef-stack-04-FreeStorageAlarm-YQ5WMOBCU981 --alarm-description  # "upef_alarm_upefrdsdb01" --metric-name FreeStorageSpace  --namespace  "AWS/RDS"   --period 60 --evaluation-periods 2 --threshold 5 # --comparison-operator GreaterThanThreshold  --statistic Maximum
-
 def describe_alarms( alarm_name ):
     client = boto3.client('cloudwatch')
     response = client.describe_alarms(
@@ -71,16 +68,21 @@ def describe_alarms( alarm_name ):
     print "---------------------- END ALARM DESCRIPTION ", alarm_name, "---------------------------"
     print ""
 
-def add_tag_to_resource( dbname ):
+# add a custom tag to an rds dbinstance
+def add_tag_to_resource( dbname,
+                         KeyName='upefKey',
+                         KeyValue="default"):
 
-    key_value =  str(datetime.datetime.now())
+    if KeyValue == "default":
+        key_value =  str(datetime.datetime.now())
+
     client = boto3.client('rds')
     response = client.add_tags_to_resource(
         ResourceName=dbname,
         Tags=[
             {
-                'Key': 'upefKey',
-                'Value': key_value
+                'Key': KeyName,
+                'Value': KeyValue
 
             }
         ]
@@ -92,6 +94,7 @@ def add_tag_to_resource( dbname ):
         print  k, "=", v
     print "------------------------- ", "add tag to resource", "------------------------- "
     print ""
+
 
 def describe_dbinstance(dbname):
     client = boto3.client('rds')
@@ -115,10 +118,10 @@ def modify_dbinstance_setting(dbname):
     print "Original value of MonitoringInterval for", dbname, "is", d.get('MonitoringInterval')
 
     response = client.modify_db_instance( DBInstanceIdentifier=dbname,
-                                          MonitoringInterval=15 )
+                                          MonitoringInterval=30 )
 
     response = client.describe_db_instances( DBInstanceIdentifier=dbname )
-    print response
+
     print "------------------------- ", "modify_dbinstance_setting", dbname,  "------------------------- "
     d = response['DBInstances']
     for index in range(len(response['DBInstances'])):
@@ -130,10 +133,10 @@ def modify_dbinstance_setting(dbname):
 
 
 
-
-
-
 def main():
+    # all will lsit all metrics for all instances
+    # <dbinstance> will list its metrics, get info about named alarms, add or modify a custom
+    # tag for the instance, display info about the instance and modify a setting
     if len(sys.argv) <= 1:
         sys.exit(sys.argv[0] + "all | <dbinstance>")
 
@@ -152,11 +155,13 @@ def main():
         for alarm_name in alarm_list:
             describe_alarms( alarm_name )
 
-    add_tag_to_resource( 'arn:aws:rds:us-east-1:546771319769:db:upefrdsdb01')
-    describe_dbinstance( sys.argv[1] )
-    modify_dbinstance_setting(sys.argv[1] )
+        add_tag_to_resource( 'arn:aws:rds:us-east-1:546771319769:db:upefrdsdb01' )
+        add_tag_to_resource( 'arn:aws:rds:us-east-1:546771319769:db:upefrdsdb01', 'upefKey-02', "hello" )
 
-    print "v2.2"
+        describe_dbinstance( sys.argv[1] )
+        modify_dbinstance_setting(sys.argv[1] )
+
+    print "v2.3"
 
 if __name__ == '__main__':
     main()
