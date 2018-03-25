@@ -14,16 +14,16 @@ def list_all():
         print index
         d = response['Metrics'][index]
 
-        for k, v in d.items():
-            print  k, " = ", v
-
         for k in d['Dimensions']:
             print k['Name'], "=", k['Value']
 
+        for k, v in d.items():
+            print  k, " = ", v
         print ""
 
 # list a specific metric for an rds dbinstance, e.g.
-# aws cloudwatch list-metrics --namespace  "AWS/RDS"   --metric-name FreeStorageSpace --dimensions #"Name="DBInstanceIdentifier",Value=upefrdsdb01"
+# aws cloudwatch list-metrics --namespace  "AWS/RDS"   --metric-name FreeStorageSpace --dimensions \
+# "Name="DBInstanceIdentifier",Value=upefrdsdb01"
 def list_metric(dbinstance_name,metric_name):
     client = boto3.client('cloudwatch')
     response = client.list_metrics(
@@ -39,18 +39,14 @@ def list_metric(dbinstance_name,metric_name):
 
     for index in range(len(response['Metrics'])):
         d = response['Metrics'][index]
-        for k, v in d.items():
-            print  k, " = ", v
-
         for k in d['Dimensions']:
             print k['Name'], "=", k['Value']
 
+        for k, v in d.items():
+            print  k, "=", v
         print ""
 
 
-
-
-# aws cloudwatch describe-alarms-for-metric --namespace  "AWS/RDS"   --metric-name FreeStorageSpace --dimensions #"Name="DBInstanceIdentifier",Value=upefrdsdb01"
 def describe_alarms( alarm_name ):
     client = boto3.client('cloudwatch')
     response = client.describe_alarms(
@@ -110,7 +106,8 @@ def describe_dbinstance(dbname):
     print "------------------------- ", "describe_dbinstance", dbname,  "------------------------- "
     print ""
 
-def modify_dbinstance_setting(dbname):
+
+def modify_dbinstance_setting( dbname ):
     client = boto3.client('rds')
 
     response = client.describe_db_instances(DBInstanceIdentifier=dbname)
@@ -131,7 +128,24 @@ def modify_dbinstance_setting(dbname):
 
     print ""
 
+def get_account_number():
+    client = boto3.client('iam')
+    response = client.get_user()
+    print response
 
+    retval = ""
+    print "------------------------- ", "user info", "------------------------- "
+    d =  response['User']
+    for k,v in d.items():
+        print k,"=",v
+        if k == "Arn":
+           str = v
+           tokenlist = str.split(':')
+           retval = tokenlist[4]
+
+    print "------------------------- ", "user info", "------------------------- "
+
+    return retval
 
 def main():
     # all will lsit all metrics for all instances
@@ -161,10 +175,15 @@ def main():
         describe_dbinstance( sys.argv[1] )
         modify_dbinstance_setting(sys.argv[1] )
 
+        my_session = boto3.session.Session()
+        my_region = my_session.region_name
+        print "region:", my_region
+
+        s = get_account_number()
+        print "account number:", s
+
+    print ""
     print "v2.4"
 
 if __name__ == '__main__':
     main()
-
-
-
