@@ -183,7 +183,7 @@ def main():
         print "account number:", s
 
     print ""
-    print "v2.4"
+    print "v2.5"
     
 
 if __name__ == '__main__':
