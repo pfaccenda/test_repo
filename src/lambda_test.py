@@ -4,16 +4,26 @@ import boto3
 
 
 def lambda_handler(event, context):
-    print "--> upefrdslambda 15"
-
     print "----- begin ----------\n"
+    version_tag = "upef lambda function v27"
+    print  version_tag
+
+    print event
+
     eventsource = event['Records'][0]['EventSource']
-    print "event source:", eventsource, type(eventsource)
+    print "event source: ", eventsource, type(eventsource)
+    print "-----------"
 
     message = event['Records'][0]['Sns']['Message']
     print "message", "=", message
-    print "message type is ", type(message)
+    print "message type is", type(message)
+
+    # if  isinstance(message, dict) == False:
+    #    print message
+    #    return
+
     d = json.loads(message)
+
     for k, v in d.items():
         print "message -->  K,V -->  ", k, "=", v
         if k == 'Trigger':
@@ -26,19 +36,21 @@ def lambda_handler(event, context):
             dbinstance = trigger['Dimensions'][0]['value']
             print " dbinstance is  ", dbinstance
 
+            modify_dbinstance_monitoring_interval(dbinstance)
+            modify_dbinstance_allocated_storage(dbinstance)
+            describe_dbinstance(dbinstance)
+
     snsinfo = event['Records'][0]['Sns']
     for k, v in snsinfo.items():
         print " SNS Info K,V -->  ", k, "=", v
 
-    print "INFO:", d['AlarmName'], dbinstance, trigger['MetricName'], d['AlarmDescription']
     print "### ALARM DATA:", snsinfo['Subject'], "from", snsinfo['TopicArn'], "###"
     print "THIS SHOULD BE SENT TO THE CLOUDOPS SNS TOPIC"
 
-    modify_dbinstance_monitoring_interval(dbinstance)
-    modify_dbinstance_allocated_storage(dbinstance)
-    describe_dbinstance(dbinstance)
+    t = d['Event ID'].split("#")
+    print "EVENT-ID", t[1]
 
-    print "--> upefrdslambda:version=15 "
+    print  version_tag
     print "------ end ----------\n"
 
     # logger = logging.getLogger()
@@ -46,7 +58,7 @@ def lambda_handler(event, context):
     # logger.info('got event{}'.format(event))
     # logger.info(message)
 
-    return message
+    return version_tag
 
 
 def my_logging_handler(event, context):
