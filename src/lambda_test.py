@@ -5,7 +5,7 @@ import boto3
 
 def lambda_handler(event, context):
     print "----- begin ----------\n"
-    version_tag = "upef lambda function v27"
+    version_tag = "upef lambda function v13"
     print  version_tag
 
     print event
@@ -18,37 +18,37 @@ def lambda_handler(event, context):
     print "message", "=", message
     print "message type is", type(message)
 
-    # if  isinstance(message, dict) == False:
-    #    print message
-    #    return
+    try:
+        d = json.loads(message)
 
-    d = json.loads(message)
+        for k, v in d.items():
+            print "message -->  K,V -->  ", k, "=", v
 
-    for k, v in d.items():
-        print "message -->  K,V -->  ", k, "=", v
-        if k == 'Trigger':
-            trigger = v
-            print "trigger", "=", v
-            print "trigger type is ", type(v)
-            for k2, v2 in trigger.items():
-                print "     ---->  trigger -->  K,V -->  ", k2, "=", v2
+        triggerinfo = d.get('Trigger')
+        print "trigger", "=", triggerinfo
+        for k2, v2 in triggerinfo.items():
+            print "     ---->  triggerinfo -->  K,V -->  ", k2, "=", v2
 
-            dbinstance = trigger['Dimensions'][0]['value']
-            print " dbinstance is  ", dbinstance
+        dbinstance = triggerinfo['Dimensions'][0]['value']
+        print " dbinstance is  ", dbinstance
 
-            modify_dbinstance_monitoring_interval(dbinstance)
-            modify_dbinstance_allocated_storage(dbinstance)
-            describe_dbinstance(dbinstance)
+        snsinfo = event['Records'][0]['Sns']
+        for k2, v2 in snsinfo.items():
+            print " SNS Info K,V -->  ", k2, "=", v2
 
-    snsinfo = event['Records'][0]['Sns']
-    for k, v in snsinfo.items():
-        print " SNS Info K,V -->  ", k, "=", v
+        print "### ALARM DATA:", snsinfo['Subject'], "from", snsinfo['TopicArn'], "###"
+    except TypeError:
+        for k, v in event['Records'][0].items():
+            print "xxxxxxxxxxxxxxxxxxx event -->", k, "=", v
 
-    print "### ALARM DATA:", snsinfo['Subject'], "from", snsinfo['TopicArn'], "###"
+        d = message
+        for k2, v2 in d.items():
+            print "xxxxxxxxxxxxxxxxxxx message -->  K,V -->  ", k2, "=", v2
+            if k2 == "Event ID":
+                t = v2.split("#")
+                print "##### EVENT-ID IS ", t[1]
+
     print "THIS SHOULD BE SENT TO THE CLOUDOPS SNS TOPIC"
-
-    t = d['Event ID'].split("#")
-    print "EVENT-ID", t[1]
 
     print  version_tag
     print "------ end ----------\n"
