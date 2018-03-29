@@ -5,7 +5,7 @@ import boto3
 
 def lambda_handler(event, context):
     print "----- begin ----------\n"
-    version_tag = "upef lambda function v13"
+    version_tag = "upef lambda function v18"
     print  version_tag
 
     print event
@@ -25,16 +25,18 @@ def lambda_handler(event, context):
             print "message -->  K,V -->  ", k, "=", v
 
         triggerinfo = d.get('Trigger')
-        print "trigger", "=", triggerinfo
-        for k2, v2 in triggerinfo.items():
-            print "     ---->  triggerinfo -->  K,V -->  ", k2, "=", v2
+        if triggerinfo != None:
+            print "trigger", "=", triggerinfo
+            for k2, v2 in triggerinfo.items():
+                print "     ---->  triggerinfo -->  K,V -->  ", k2, "=", v2
 
-        dbinstance = triggerinfo['Dimensions'][0]['value']
-        print " dbinstance is  ", dbinstance
+            if triggerinfo['Dimensions'][0]['value'] != None:
+                dbinstance = triggerinfo['Dimensions'][0]['value']
+                print " dbinstance is  ", dbinstance
+            else:
+                print "no Dimensions in message"
 
-        snsinfo = event['Records'][0]['Sns']
-        for k2, v2 in snsinfo.items():
-            print " SNS Info K,V -->  ", k2, "=", v2
+        snsinfo = printSnsInfo(event, "case 1")
 
         print "### ALARM DATA:", snsinfo['Subject'], "from", snsinfo['TopicArn'], "###"
     except TypeError:
@@ -47,6 +49,11 @@ def lambda_handler(event, context):
             if k2 == "Event ID":
                 t = v2.split("#")
                 print "##### EVENT-ID IS ", t[1]
+    except ValueError as e:
+        print e
+        snsinfo = printSnsInfo(event, "case 2")
+
+        print "### ALARM DATA:", snsinfo['Subject'], "from", snsinfo['TopicArn'], "###"
 
     print "THIS SHOULD BE SENT TO THE CLOUDOPS SNS TOPIC"
 
@@ -59,6 +66,21 @@ def lambda_handler(event, context):
     # logger.info(message)
 
     return version_tag
+
+
+def printSnsInfo(event, tag=""):
+    snsinfo = event['Records'][0]['Sns']
+    for k, v in snsinfo.items():
+        print " printSnsInfo", tag, " SNS Info K,V -->  ", k, "=", v
+
+    d = snsinfo['Message']
+    if isinstance(d, dict):
+        for k2, v2 in d.items():
+            print "     Message Info", tag, k, "=", v
+    else:
+        print "     Message Info:", d
+
+    return snsinfo
 
 
 def my_logging_handler(event, context):
