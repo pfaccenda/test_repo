@@ -4,14 +4,15 @@ import boto3
 import os, sys
 import json
 import datetime
+import time
+import datetime
 
-
-def describe_events(f):
+def describe_events(f, duration):
     client = boto3.client('rds')
 
     response = client.describe_events(
         SourceType='db-instance',
-        Duration=700,  #10280
+        Duration=duration,
         EventCategories=[
             'creation',
         ],
@@ -52,7 +53,12 @@ def describe_dbinstance(f, client, dbname):
 
     try:
         response = client.describe_db_instances(DBInstanceIdentifier=dbname)
-        print "------------------------- ", "begin describe_dbinstance", dbname, "------------------------- "
+        s = "------------------------- begin describe_dbinstance  " + dbname + "------------------------- "
+        print s
+        f.write( unicode(s) )
+        f.write('\r\n')
+
+        keywordlist = [ "InstanceCreateTime", "AllocatedStorage", "DBInstanceClass", "DBInstanceIdentifier" ]
 
         d = response
         for k, v in d.items():
@@ -63,13 +69,22 @@ def describe_dbinstance(f, client, dbname):
             for i in range(len(dd)):
                 #print_dict( dd[i], "DBInstanceInfo " )
                 for k2, v2 in dd[i].items():
-                    #s = "DBInstanceInfo " + 'k2 + "=" +  v2
-                    s =  " ->  " + unicode(k2) +  "=" + unicode(v2)
+                    c = " "
+                    if k2 in keywordlist:
+                        c = "*** "
+                    else:
+                        c = "    "
+
+                    s =  unicode(c) + unicode(k2) +  " = " + unicode(v2)
                     print s
                     s += "\r\n"
                     f.write(s)
 
-        print "------------------------- ", "end describe_dbinstance", dbname, "------------------------- "
+        s = "-------------------------  end describe_dbinstance  " + dbname + "------------------------- "
+        print s
+        f.write( unicode(s) )
+        f.write('\r\n')
+        f.write('\r\n')
         print ""
     except Exception as e: # DBInstanceNotFoundFault as e:
         print dbname, "not found\n"
@@ -78,20 +93,23 @@ def describe_dbinstance(f, client, dbname):
 
 
 def main():
+    s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
+    print(s)
+
     fname  = "/tmp/datafile"
     f = open(fname, 'w')
     #f = io.open('/tmp/datafile', 'w', newline='\r\n')
-    #for i in range( 1, 16):
-    #    f.write('hello ss to the world!!\r\n')
 
-    describe_events(f)
+    describe_events(f,10820)
     f.close()
 
     s3 = boto3.resource('s3')
-    s3.meta.client.upload_file(fname, 'upefbucket', 'rdsdata_199.txt')
+    output_file =  "database_info_" + s + ".txt"
+    bucket_name = 'upefbucket'
+    s3.meta.client.upload_file(fname, bucket_name, s )
 
     print "v2.5"
-
+    print "created bucket " + bucket_name + " " + s
 
 if __name__ == '__main__':
     main()
