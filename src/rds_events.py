@@ -34,9 +34,19 @@ def exp_s3_info():
     print_dict( response )
     print_dict( response['Owner'] )
     print_list( response['Buckets'] )
+
+    keywordlist = ["CreationDate"]
     for i in range(len( response['Buckets'] )):
-        print_dict(  response['Buckets'][i] )
-    # for k, v in table_info['Table'].items():
+        print_dict(  response['Buckets'][i], "S3bucket" )
+
+        bucket_creation_time = response['Buckets'][i]['CreationDate']
+        age_in_seconds = time_diff_seconds(bucket_creation_time,
+                                           datetime.datetime.utcnow())
+        print "bucket_age is", age_in_seconds / (60 * 60 * 24), "days"
+        print "bucket_age is", age_in_seconds / (60 * 60), "hours"
+
+        age_in_fractional_days = (age_in_seconds / (60.0 * 60.0)) / 24
+        print "bucket_age_in_fractional_days =", age_in_fractional_days
 
     # Get a list of all bucket names from the response
     buckets = [bucket['Name'] for bucket in response['Buckets']]
@@ -70,40 +80,14 @@ def list_dynamodb_tables(f):
             print table_name, "--->", k, " = ", v
             # print_dict( table_info, table_name )
             if k in keywordlist:
-                # print ( "****", table_info['Table']['CreationDateTime'])
-                d1 =  table_info['Table']['CreationDateTime']
-                # print type(d1)
-                d2 = datetime.datetime.utcnow()
-                naive = d1.replace(tzinfo=None)
-                # print type(d2)
-                age = d2 - naive
-                if age.days == 0:
-                    print "NEW TABLE: AGE (days): ", age.days
-                else:
-                    print "AGE (days): ", age.days
+                age_in_seconds = time_diff_seconds(table_info['Table']['CreationDateTime'],
+                                  datetime.datetime.utcnow())
+                print "age is", age_in_seconds / (60 * 60 * 24), "days"
+                print "age is", age_in_seconds / (60 * 60), "hours"
 
-                dt_now= datetime.datetime.utcnow()
+                age_in_fractional_days = (age_in_seconds / (60.0 * 60.0)) / 24
+                print "age_in_fractional_days =",age_in_fractional_days
 
-                print "dt_now", calendar.timegm(dt_now.utctimetuple())
-                dt1 = table_info['Table']['CreationDateTime']
-                print "dt1", calendar.timegm(dt1.utctimetuple())
-                timestamp_table =  calendar.timegm(dt1.utctimetuple())
-                timestamp_now =  calendar.timegm(dt_now.utctimetuple())
-                print "timestamp_now", timestamp_now
-                print "timestamp_table", timestamp_table
-
-                age_seconds = timestamp_now -timestamp_table
-                print "age is", age_seconds /(60*60*24), "days"
-                print "age is", age_seconds /(60*60), "hours"
-
-                f =  (age_seconds /(60.0*60.0))/24
-                print f
-                print dt1.utctimetuple()
-                print dt_now.utctimetuple()
-                print type(dt1.utctimetuple())
-                print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
-            #print type(v)
             if k == "ProvisionedThroughput":
                 print_dict( v, table_name+" --> " +  k )
 
@@ -155,7 +139,22 @@ def print_list( mylist,tag="" ):
 
 
 
+def time_diff_seconds( datetime1, datetime2 ):
+    timestamp_1 =  calendar.timegm(datetime1.utctimetuple())
+    timestamp_2 =  calendar.timegm(datetime2.utctimetuple())
+    diff_seconds = timestamp_2 - timestamp_1
+    ########## print "########################"
 
+    ########## print "age is", diff_seconds / (60 * 60 * 24), "days"
+    ########## print "age is", diff_seconds / (60 * 60), "hours"
+
+    ########## f = (diff_seconds / (60.0 * 60.0)) / 24
+    ########## print f
+    ########## print datetime1.utctimetuple()
+    ########## print datetime2.utctimetuple()
+    ########## print "########################"
+
+    return diff_seconds
 
 def describe_dbinstance(f, client, dbname):
 
@@ -200,40 +199,6 @@ def describe_dbinstance(f, client, dbname):
         print dbname, "not found\n"
         print e
 
-
-def time_test():
-    print "xx"
-    s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M:%z")
-    print "S", s
-    ts = time.time()
-    print "TS time.time", ts
-
-    s = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M:%z")
-    x =datetime.datetime.utcoffset( datetime.datetime.now()  )
-    print "x", x
-
-    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-    print "ST:", st
-    # 2018-04-07 23:54:22.523000-04:00
-
-    #d2 = datetime.datetime.utcnow()
-    #naive = d1.replace(tzinfo=None)
-    # print type(d2)
-    datetime.datetime.utcfromtimestamp(ts)
-    print ts
-
-    utc_date = datetime.datetime.utcnow().date()
-    ts = (utc_date - datetime.date(1970, 1, 1)).days * 8640
-    print utc_date
-    print ts
-
-    dt = datetime.datetime.utcnow()
-
-    import calendar
-
-    # Converts a datetime object to UTC timestamp
-    #     naive datetime will be considered UTC.
-    print "XXX", calendar.timegm(dt.utctimetuple())
 
 def main():
     s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
