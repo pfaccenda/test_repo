@@ -5,6 +5,7 @@ import os, sys
 import json
 import datetime
 import time
+import calendar
 
 
 def exp_rds_paginator():
@@ -40,11 +41,31 @@ def list_dynamodb_tables(f):
                 naive = d1.replace(tzinfo=None)
                 # print type(d2)
                 age = d2 - naive
-                #age = days_between(d1, d2)
                 if age.days == 0:
                     print "NEW TABLE: AGE (days): ", age.days
                 else:
                     print "AGE (days): ", age.days
+
+                dt_now= datetime.datetime.utcnow()
+
+                print "dt_now", calendar.timegm(dt_now.utctimetuple())
+                dt1 = table_info['Table']['CreationDateTime']
+                print "dt1", calendar.timegm(dt1.utctimetuple())
+                timestamp_table =  calendar.timegm(dt1.utctimetuple())
+                timestamp_now =  calendar.timegm(dt_now.utctimetuple())
+                print "timestamp_now", timestamp_now
+                print "timestamp_table", timestamp_table
+
+                age_seconds = timestamp_now -timestamp_table
+                print "age is", age_seconds /(60*60*24), "days"
+                print "age is", age_seconds /(60*60), "hours"
+
+                f =  (age_seconds /(60.0*60.0))/24
+                print f
+                print dt1.utctimetuple()
+                print dt_now.utctimetuple()
+                print type(dt1.utctimetuple())
+                print "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
             #print type(v)
             if k == "ProvisionedThroughput":
@@ -58,12 +79,6 @@ def list_dynamodb_tables(f):
 
         print "------- end dynamodb table: " + table_name + " --------------"
         print ""
-
-
-def days_between(d1, d2):
-    # d1 = datetime.strptime(d1, "%Y-%m-%d")
-    d2 = datetime.strptime(d2, "%Y-%m-%d")
-    return abs((d2 - d1).days)
 
 
 
@@ -150,6 +165,39 @@ def describe_dbinstance(f, client, dbname):
         print e
 
 
+def time_test():
+    print "xx"
+    s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M:%z")
+    print "S", s
+    ts = time.time()
+    print "TS time.time", ts
+
+    s = datetime.datetime.utcnow().strftime("%Y-%m-%d-%H-%M:%z")
+    x =datetime.datetime.utcoffset( datetime.datetime.now()  )
+    print "x", x
+
+    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+    print "ST:", st
+    # 2018-04-07 23:54:22.523000-04:00
+
+    #d2 = datetime.datetime.utcnow()
+    #naive = d1.replace(tzinfo=None)
+    # print type(d2)
+    datetime.datetime.utcfromtimestamp(ts)
+    print ts
+
+    utc_date = datetime.datetime.utcnow().date()
+    ts = (utc_date - datetime.date(1970, 1, 1)).days * 8640
+    print utc_date
+    print ts
+
+    dt = datetime.datetime.utcnow()
+
+    import calendar
+
+    # Converts a datetime object to UTC timestamp
+    #     naive datetime will be considered UTC.
+    print "XXX", calendar.timegm(dt.utctimetuple())
 
 def main():
     s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
@@ -172,5 +220,7 @@ def main():
     print "v2.6"
     print "created bucket " + bucket_name + " " + s
 
+
 if __name__ == '__main__':
+    #time_test()
     main()
