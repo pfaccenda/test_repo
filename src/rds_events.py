@@ -15,6 +15,42 @@ def exp_rds_paginator():
     print_dict(response)
     print_list( response['DBInstances'])
 
+def exp_kinesis_info():
+    print "exp_kinesis_info"
+    client = boto3.client('kinesis')
+    response = client.list_streams(  Limit=123 )
+    print response
+    print_dict( response )
+
+
+
+def exp_s3_info():
+    # Create an S3 client
+    s3 = boto3.client('s3')
+
+    # Call S3 to list current buckets
+    response = s3.list_buckets()
+    print response
+    print_dict( response )
+    print_dict( response['Owner'] )
+    print_list( response['Buckets'] )
+    for i in range(len( response['Buckets'] )):
+        print_dict(  response['Buckets'][i] )
+    # for k, v in table_info['Table'].items():
+
+    # Get a list of all bucket names from the response
+    buckets = [bucket['Name'] for bucket in response['Buckets']]
+
+    # Print out the bucket list
+    print("Bucket List: %s" % buckets)
+
+    print ("------------")
+
+    # Print out bucket names
+    s3 = boto3.resource('s3')
+    for bucket in s3.buckets.all():
+        print bucket.name, bucket.creation_date
+
 def list_dynamodb_tables(f):
     print "list_dynamodb_tables"
     client = boto3.client('dynamodb')
@@ -210,6 +246,10 @@ def main():
     describe_events(f,10820)
 
     list_dynamodb_tables(f)
+
+    exp_s3_info()
+    exp_kinesis_info()
+
     f.close()
 
     s3 = boto3.resource('s3')
@@ -222,5 +262,4 @@ def main():
 
 
 if __name__ == '__main__':
-    #time_test()
     main()
