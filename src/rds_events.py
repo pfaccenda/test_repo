@@ -23,22 +23,38 @@ def list_dynamodb_tables(f):
     print_list(response['TableNames'])
     print type( response['TableNames'])
 
+    keywordlist = ["CreationDateTime" ]
     for i in range(len( response['TableNames'] )):
         table_name = response['TableNames'][i]
         print "------- begin dynamodb table: " + table_name + " --------------"
         table_info = client.describe_table( TableName=table_name )
-        print_dict( table_info['Table'], table_name )
-        # print_dict( table_info, table_name )
+        # print_dict( table_info['Table'], "table_name" )
+        for k,v in  table_info['Table'].items():
+            print table_name, "--->", k, " = ", v
+            # print_dict( table_info, table_name )
+            if k in keywordlist:
+                # print ( "****", table_info['Table']['CreationDateTime'])
+                d1 =  table_info['Table']['CreationDateTime']
+                # print type(d1)
+                d2 = datetime.datetime.utcnow()
+                naive = d1.replace(tzinfo=None)
+                # print type(d2)
+                age = d2 - naive
+                #age = days_between(d1, d2)
+                if age.days == 0:
+                    print "NEW TABLE: AGE (days): ", age.days
+                else:
+                    print "AGE (days): ", age.days
 
-        print ( "****", table_info['Table']['CreationDateTime'])
-        d1 =  table_info['Table']['CreationDateTime']
-        print type(d1)
-        d2 = datetime.datetime.utcnow()
-        naive = d1.replace(tzinfo=None)
-        print type(d2)
-        age = d2 - naive
-        #age = days_between(d1, d2)
-        print "AGE (days): ", age.days
+            #print type(v)
+            if k == "ProvisionedThroughput":
+                print_dict( v, table_name+" --> " +  k )
+
+            if k == "AttributeDefinitions":
+                print_list( v, table_name+" --> " +  k )
+
+            if k == "KeySchema":
+                print_list( v, table_name+" --> " +  k )
 
         print "------- end dynamodb table: " + table_name + " --------------"
         print ""
