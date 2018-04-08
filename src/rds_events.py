@@ -5,7 +5,52 @@ import os, sys
 import json
 import datetime
 import time
-import datetime
+
+
+def exp_rds_paginator():
+    client = boto3.client('rds')
+    response = client.describe_db_instances(MaxRecords=20)
+    print( response )
+    print_dict(response)
+    print_list( response['DBInstances'])
+
+def list_dynamodb_tables(f):
+    print "list_dynamodb_tables"
+    client = boto3.client('dynamodb')
+
+    response = client.list_tables()
+    print_dict( response)
+    print_list(response['TableNames'])
+    print type( response['TableNames'])
+
+    for i in range(len( response['TableNames'] )):
+        table_name = response['TableNames'][i]
+        print "------- begin dynamodb table: " + table_name + " --------------"
+        table_info = client.describe_table( TableName=table_name )
+        print_dict( table_info['Table'], table_name )
+        # print_dict( table_info, table_name )
+
+        print ( "****", table_info['Table']['CreationDateTime'])
+        d1 =  table_info['Table']['CreationDateTime']
+        print type(d1)
+        d2 = datetime.datetime.utcnow()
+        naive = d1.replace(tzinfo=None)
+        print type(d2)
+        age = d2 - naive
+        #age = days_between(d1, d2)
+        print "AGE (days): ", age.days
+
+        print "------- end dynamodb table: " + table_name + " --------------"
+        print ""
+
+
+def days_between(d1, d2):
+    # d1 = datetime.strptime(d1, "%Y-%m-%d")
+    d2 = datetime.strptime(d2, "%Y-%m-%d")
+    return abs((d2 - d1).days)
+
+
+
 
 def describe_events(f, duration):
     client = boto3.client('rds')
@@ -34,14 +79,12 @@ def print_dict( d,tag="" ):
     for k, v in d.items():
         print tag, "--->",   k, "=", v
     print "----------- end dict", tag, "----------- "
-    print ""
 
 def print_list( mylist,tag="" ):
     print "----------- begin list", tag, "----------- "
     for i in range(len(mylist)):
         print tag, "[", i, "]","--->",   mylist[i]
     print "----------- end list", tag, "----------- "
-    print ""
 
 
 
@@ -101,6 +144,8 @@ def main():
     #f = io.open('/tmp/datafile', 'w', newline='\r\n')
 
     describe_events(f,10820)
+
+    list_dynamodb_tables(f)
     f.close()
 
     s3 = boto3.resource('s3')
@@ -108,7 +153,7 @@ def main():
     bucket_name = 'upefbucket'
     s3.meta.client.upload_file(fname, bucket_name, s )
 
-    print "v2.5"
+    print "v2.6"
     print "created bucket " + bucket_name + " " + s
 
 if __name__ == '__main__':
