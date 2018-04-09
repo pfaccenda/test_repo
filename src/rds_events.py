@@ -25,6 +25,7 @@ def exp_kinesis_info():
 
 
 def exp_s3_info():
+    print "########################### S3 BUCKET INFO ################################"
     # Create an S3 client
     s3 = boto3.client('s3')
 
@@ -54,15 +55,15 @@ def exp_s3_info():
     # Print out the bucket list
     print("Bucket List: %s" % buckets)
 
-    print ("------------")
-
     # Print out bucket names
     s3 = boto3.resource('s3')
     for bucket in s3.buckets.all():
         print bucket.name, bucket.creation_date
 
+    print "########################### S3 BUCKET INFO ################################"
+
 def list_dynamodb_tables(f):
-    print "list_dynamodb_tables"
+    print "########################### DYNAMODB TABLE INFO ################################"
     client = boto3.client('dynamodb')
 
     response = client.list_tables()
@@ -100,6 +101,8 @@ def list_dynamodb_tables(f):
         print "------- end dynamodb table: " + table_name + " --------------"
         print ""
 
+    print "########################### END DYNAMODB TABLE INFO ################################"
+    print ""
 
 
 
@@ -143,17 +146,6 @@ def time_diff_seconds( datetime1, datetime2 ):
     timestamp_1 =  calendar.timegm(datetime1.utctimetuple())
     timestamp_2 =  calendar.timegm(datetime2.utctimetuple())
     diff_seconds = timestamp_2 - timestamp_1
-    ########## print "########################"
-
-    ########## print "age is", diff_seconds / (60 * 60 * 24), "days"
-    ########## print "age is", diff_seconds / (60 * 60), "hours"
-
-    ########## f = (diff_seconds / (60.0 * 60.0)) / 24
-    ########## print f
-    ########## print datetime1.utctimetuple()
-    ########## print datetime2.utctimetuple()
-    ########## print "########################"
-
     return diff_seconds
 
 def describe_dbinstance(f, client, dbname):
@@ -167,7 +159,12 @@ def describe_dbinstance(f, client, dbname):
         f.write( unicode(s) )
         f.write('\r\n')
 
-        keywordlist = [ "InstanceCreateTime", "AllocatedStorage", "DBInstanceClass", "DBInstanceIdentifier" ]
+        keywordlist = [
+                        "InstanceCreateTime",
+                        "AllocatedStorage",
+                        "DBInstanceClass",
+                        "DBInstanceIdentifier"
+                      ]
 
         d = response
         for k, v in d.items():
@@ -209,7 +206,6 @@ def main():
     #f = io.open('/tmp/datafile', 'w', newline='\r\n')
 
     describe_events(f,10820)
-
     list_dynamodb_tables(f)
 
     exp_s3_info()
@@ -222,9 +218,15 @@ def main():
     bucket_name = 'upefbucket'
     s3.meta.client.upload_file(fname, bucket_name, s )
 
-    print "v2.6"
+    print "v3.0"
     print "created bucket " + bucket_name + " " + s
 
 
 if __name__ == '__main__':
     main()
+    try:
+        upef_env = os.environ['UPEF_ENV_VAR_1']
+        print "UPEF_ENV_VAR_1 =", upef_env
+    except KeyError:
+        pass
+
