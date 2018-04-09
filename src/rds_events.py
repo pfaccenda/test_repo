@@ -7,6 +7,7 @@ import datetime
 import time
 import calendar
 
+rds_db_names = []
 
 def exp_rds_paginator():
     client = boto3.client('rds')
@@ -22,6 +23,11 @@ def exp_kinesis_info():
     print response
     print_dict( response )
 
+def show_rds_db_names():
+    for i in range( len(rds_db_names)):
+            print "rds database instance:",  i,  rds_db_names [ i ]
+
+      
 
 
 def exp_s3_info():
@@ -31,29 +37,31 @@ def exp_s3_info():
 
     # Call S3 to list current buckets
     response = s3.list_buckets()
-    print response
-    print_dict( response )
+    # print response
+    # print_dict( response )
     print_dict( response['Owner'] )
-    print_list( response['Buckets'] )
+    ## --> print_list( response['Buckets'] )
 
     keywordlist = ["CreationDate"]
     for i in range(len( response['Buckets'] )):
-        print_dict(  response['Buckets'][i], "S3bucket" )
+        name= response['Buckets'] [i] ['Name']
+        print_dict(  response['Buckets'][i], "S3 bucket: " + name  )
 
         bucket_creation_time = response['Buckets'][i]['CreationDate']
         age_in_seconds = time_diff_seconds(bucket_creation_time,
                                            datetime.datetime.utcnow())
-        print "bucket_age is", age_in_seconds / (60 * 60 * 24), "days"
-        print "bucket_age is", age_in_seconds / (60 * 60), "hours"
+        print name, "bucket_age is", age_in_seconds / (60 * 60 * 24), "days"
+        print name, "bucket_age is", age_in_seconds / (60 * 60), "hours"
 
         age_in_fractional_days = (age_in_seconds / (60.0 * 60.0)) / 24
-        print "bucket_age_in_fractional_days =", age_in_fractional_days
+        print name,"bucket_age_in_fractional_days =", age_in_fractional_days
+    print ""
 
     # Get a list of all bucket names from the response
     buckets = [bucket['Name'] for bucket in response['Buckets']]
 
     # Print out the bucket list
-    print("Bucket List: %s" % buckets)
+    # print("Bucket List: %s" % buckets)
 
     # Print out bucket names
     s3 = boto3.resource('s3')
@@ -134,6 +142,7 @@ def print_dict( d,tag="" ):
         print tag, "--->",   k, "=", v
     print "----------- end dict", tag, "----------- "
 
+
 def print_list( mylist,tag="" ):
     print "----------- begin list", tag, "----------- "
     for i in range(len(mylist)):
@@ -154,6 +163,7 @@ def describe_dbinstance(f, client, dbname):
 
     try:
         response = client.describe_db_instances(DBInstanceIdentifier=dbname)
+    rds_db_names.append( dbname )
         s = "------------------------- begin describe_dbinstance  " + dbname + "------------------------- "
         print s
         f.write( unicode(s) )
@@ -182,9 +192,13 @@ def describe_dbinstance(f, client, dbname):
                         c = "    "
 
                     s =  unicode(c) + unicode(k2) +  " = " + unicode(v2)
-                    print s
+
+                    formatted = "{0:4} {1:32}  = {2}".format( c, k2, v2 )
+                    #print s
+                #s = formatted
+                    print formatted
                     s += "\r\n"
-                    f.write(s)
+                    f.write(s) 
 
         s = "-------------------------  end describe_dbinstance  " + dbname + "------------------------- "
         print s
@@ -193,11 +207,23 @@ def describe_dbinstance(f, client, dbname):
         f.write('\r\n')
         print ""
     except Exception as e: # DBInstanceNotFoundFault as e:
-        print dbname, "not found\n"
-        print e
+        print dbname, "not found. database has been deleted"
+        # print e
 
 
 def main():
+    duration = 10820
+    try:
+        upef_env = os.environ['UPEF_ENV_VAR_1']
+        print "UPEF_ENV_VAR_1 =",  upef_env 
+
+    duration = int( os.environ['DURATION'] )
+  
+    except KeyError:
+        pass
+
+    print 'duration=', duration
+
     s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
     print(s)
 
@@ -205,28 +231,33 @@ def main():
     f = open(fname, 'w')
     #f = io.open('/tmp/datafile', 'w', newline='\r\n')
 
-    describe_events(f,10820)
-    list_dynamodb_tables(f)
+    if  upef_env == "RDS" or upef_env == "ALL":
+        describe_events(f,duration)
+        show_rds_db_names()
 
-    exp_s3_info()
+    if  upef_env == "DYNAMODB" or upef_env == "ALL":
+        list_dynamodb_tables(f)
+
+    if  upef_env == "S3" or upef_env == "ALL":
+        exp_s3_info()
+
+
+    if  upef_env == "KINESIS" or upef_env == "ALL":
     exp_kinesis_info()
 
     f.close()
 
-    s3 = boto3.resource('s3')
-    output_file =  "database_info_" + s + ".txt"
-    bucket_name = 'upefbucket'
-    s3.meta.client.upload_file(fname, bucket_name, s )
+    upload_flag = False;
+    if upload_flag == True:
+        s3 = boto3.resource('s3')
+        output_file =  "database_info_" + s + ".txt"
+        bucket_name = 'upefbucket'
+        s3.meta.client.upload_file(fname, bucket_name, s )
 
-    print "v3.0"
-    print "created bucket " + bucket_name + " " + s
+        print "v3.0"
+        print "created bucket " + bucket_name + " " + s
 
 
 if __name__ == '__main__':
     main()
-    try:
-        upef_env = os.environ['UPEF_ENV_VAR_1']
-        print "UPEF_ENV_VAR_1 =", upef_env
-    except KeyError:
-        pass
 
