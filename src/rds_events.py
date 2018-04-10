@@ -251,7 +251,7 @@ def main():
         upef_env = os.environ['UPEF_ENV_VAR_1']
         print "UPEF_ENV_VAR_1 =",  upef_env 
 
-    duration = int( os.environ['DURATION'] )
+        duration = int( os.environ['DURATION'] )
   
     except KeyError:
         pass
@@ -262,6 +262,8 @@ def main():
     print(s)
 
     print os.name 
+
+
     
     if os.name == "nt":
         fname  = "tmp/datafile"
