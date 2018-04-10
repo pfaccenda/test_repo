@@ -163,7 +163,7 @@ def describe_dbinstance(f, client, dbname):
 
     try:
         response = client.describe_db_instances(DBInstanceIdentifier=dbname)
-    rds_db_names.append( dbname )
+        rds_db_names.append( dbname )
         s = "------------------------- begin describe_dbinstance  " + dbname + "------------------------- "
         print s
         f.write( unicode(s) )
@@ -217,7 +217,7 @@ def main():
         upef_env = os.environ['UPEF_ENV_VAR_1']
         print "UPEF_ENV_VAR_1 =",  upef_env 
 
-    duration = int( os.environ['DURATION'] )
+        duration = int( os.environ['DURATION'] )
   
     except KeyError:
         pass
@@ -243,7 +243,7 @@ def main():
 
 
     if  upef_env == "KINESIS" or upef_env == "ALL":
-    exp_kinesis_info()
+       exp_kinesis_info()
 
     f.close()
 
