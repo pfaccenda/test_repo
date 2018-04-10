@@ -6,6 +6,7 @@ import json
 import datetime
 import time
 import calendar
+import io
 
 rds_db_names = []
 
@@ -25,9 +26,9 @@ def exp_kinesis_info():
 
 def show_rds_db_names():
     for i in range( len(rds_db_names)):
-            print "rds database instance:",  i,  rds_db_names [ i ]
-
-      
+        print "rds database instance:",  i,  rds_db_names [ i ]
+            
+    print ""
 
 
 def exp_s3_info():
@@ -39,13 +40,17 @@ def exp_s3_info():
     response = s3.list_buckets()
     # print response
     # print_dict( response )
-    print_dict( response['Owner'] )
+    #--->print_dict( response['Owner'], "Owner" )
+    for k,v in response['Owner'].items():
+        print "Owner", "  ",  k, "=", v
     ## --> print_list( response['Buckets'] )
 
     keywordlist = ["CreationDate"]
     for i in range(len( response['Buckets'] )):
         name= response['Buckets'] [i] ['Name']
-        print_dict(  response['Buckets'][i], "S3 bucket: " + name  )
+        #print_dict(  response['Buckets'][i], "S3 bucket: " + name  )
+        for k,v in  response['Buckets'][i].items():
+            print name, "  ",  k, "=", v
 
         bucket_creation_time = response['Buckets'][i]['CreationDate']
         age_in_seconds = time_diff_seconds(bucket_creation_time,
@@ -58,18 +63,37 @@ def exp_s3_info():
     print ""
 
     # Get a list of all bucket names from the response
-    buckets = [bucket['Name'] for bucket in response['Buckets']]
+    # buckets = [bucket['Name'] for bucket in response['Buckets']]
 
     # Print out the bucket list
     # print("Bucket List: %s" % buckets)
 
     # Print out bucket names
-    s3 = boto3.resource('s3')
-    for bucket in s3.buckets.all():
-        print bucket.name, bucket.creation_date
+    # s3 = boto3.resource('s3')
+    #for bucket in s3.buckets.all():
+    #    print bucket.name, bucket.creation_date
 
     print "########################### S3 BUCKET INFO ################################"
+    
+    print len( response['Buckets']), "  ", "buckets were found"
 
+
+def get_caller_identiry(f):
+    client = boto3.client('sts')
+    response = client.get_caller_identity()
+    print_dict( response )
+    print "ACCOUNT IS {}".format (response['Account'] )
+    print "ARN  IS {}".format( response['Arn'] )
+    s = response['Arn']
+    words = s.split( ":")
+    print_list( words, "caller-identity-info" )
+    
+    s = words[5]
+    words = s.split( "/")
+    print_list( words, "user-info" )
+    
+
+    
 def list_dynamodb_tables(f):
     print "########################### DYNAMODB TABLE INFO ################################"
     client = boto3.client('dynamodb')
@@ -77,7 +101,7 @@ def list_dynamodb_tables(f):
     response = client.list_tables()
     print_dict( response)
     print_list(response['TableNames'])
-    print type( response['TableNames'])
+    # print type( response['TableNames'])
 
     keywordlist = ["CreationDateTime" ]
     for i in range(len( response['TableNames'] )):
@@ -98,13 +122,20 @@ def list_dynamodb_tables(f):
                 print "age_in_fractional_days =",age_in_fractional_days
 
             if k == "ProvisionedThroughput":
-                print_dict( v, table_name+" --> " +  k )
+                # print_dict( v, table_name+" --> " +  k )
+                for k2,v2 in v.items():
+                    print table_name, "  ", "ProvisionedThroughput", ":", k2, "=", v2
 
             if k == "AttributeDefinitions":
-                print_list( v, table_name+" --> " +  k )
+                # print_list( v, table_name+" --> " +  k )
+                for i in range(len(v)):
+                    print table_name, "  ", "AttributeDefinitions", ":", v[i]
 
             if k == "KeySchema":
-                print_list( v, table_name+" --> " +  k )
+                # print_list( v, table_name+" --> " +  k )
+                # print_list( v, table_name+" --> " +  k )
+                for i in range(len(v)):
+                    print table_name, "  ", "KeySchema", ":", v[i]
 
         print "------- end dynamodb table: " + table_name + " --------------"
         print ""
@@ -163,7 +194,6 @@ def describe_dbinstance(f, client, dbname):
 
     try:
         response = client.describe_db_instances(DBInstanceIdentifier=dbname)
-    rds_db_names.append( dbname )
         s = "------------------------- begin describe_dbinstance  " + dbname + "------------------------- "
         print s
         f.write( unicode(s) )
@@ -206,9 +236,13 @@ def describe_dbinstance(f, client, dbname):
         f.write('\r\n')
         f.write('\r\n')
         print ""
+        
+        rds_db_names.append( dbname )
+
     except Exception as e: # DBInstanceNotFoundFault as e:
-        print dbname, "not found. database has been deleted"
+        #print dbname, "not found. database has been deleted"
         # print e
+        pass
 
 
 def main():
@@ -227,9 +261,20 @@ def main():
     s = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
     print(s)
 
-    fname  = "/tmp/datafile"
-    f = open(fname, 'w')
-    #f = io.open('/tmp/datafile', 'w', newline='\r\n')
+    print os.name 
+    
+    if os.name == "nt":
+        fname  = "tmp/datafile"
+        f = open(fname, 'w')
+        #f = io.open(fname, 'w', newline='\r\n')
+    else:
+        fname  = "/tmp/datafile"
+        # f = io.open( fname, 'w', newline='\n')
+        f = open(fname, 'w')
+
+
+    f.write( s )
+    f.write( "\r\n")
 
     if  upef_env == "RDS" or upef_env == "ALL":
         describe_events(f,duration)
@@ -241,12 +286,13 @@ def main():
     if  upef_env == "S3" or upef_env == "ALL":
         exp_s3_info()
 
-
     if  upef_env == "KINESIS" or upef_env == "ALL":
-    exp_kinesis_info()
+        exp_kinesis_info()
+
+    get_caller_identiry(f)
 
     f.close()
-
+    
     upload_flag = False;
     if upload_flag == True:
         s3 = boto3.resource('s3')
