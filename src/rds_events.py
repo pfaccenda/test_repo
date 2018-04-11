@@ -7,6 +7,7 @@ import datetime
 import time
 import calendar
 import io
+from boto3.s3.transfer import S3Transfer
 
 rds_db_names = []
 
@@ -78,7 +79,7 @@ def exp_s3_info():
     print len( response['Buckets']), "  ", "buckets were found"
 
 
-def get_caller_identiry(f):
+def get_caller_identity(f):
     client = boto3.client('sts')
     response = client.get_caller_identity()
     print_dict( response )
@@ -91,7 +92,17 @@ def get_caller_identiry(f):
     s = words[5]
     words = s.split( "/")
     print_list( words, "user-info" )
+    return response['Account']
     
+def list_account_aliases(f):
+    
+    client = boto3.client('iam')
+    response = client.list_account_aliases()
+    print_dict( response )
+    s = str( response['AccountAliases'])
+    return s.strip("'[]")
+
+
 
     
 def list_dynamodb_tables(f):
@@ -251,7 +262,7 @@ def main():
         upef_env = os.environ['UPEF_ENV_VAR_1']
         print "UPEF_ENV_VAR_1 =",  upef_env 
 
-        duration = int( os.environ['DURATION'] )
+    duration = int( os.environ['DURATION'] )
   
     except KeyError:
         pass
@@ -262,8 +273,6 @@ def main():
     print(s)
 
     print os.name 
-
-
     
     if os.name == "nt":
         fname  = "tmp/datafile"
@@ -291,19 +300,27 @@ def main():
     if  upef_env == "KINESIS" or upef_env == "ALL":
         exp_kinesis_info()
 
-    get_caller_identiry(f)
+    account=get_caller_identity(f)
+    print "get_caller_identity returned", account 
+    
+    account=list_account_aliases(f)
+    print "list_account_aliases returned", account 
 
     f.close()
     
-    upload_flag = False;
+    upload_flag = True;
     if upload_flag == True:
         s3 = boto3.resource('s3')
-        output_file =  "database_info_" + s + ".txt"
-        bucket_name = 'upefbucket'
-        s3.meta.client.upload_file(fname, bucket_name, s )
+        client = s3.meta.client
+        transfer = S3Transfer(client)
+        output_file =  "database_info_" + account + "_" + s + "_"  + ".txt"
+        print "OUTPUT FILE", output_file
+        bucket_name = 'upef-test-bucket-002'
+        transfer.upload_file(fname, bucket_name, output_file, 
+                              extra_args={'ServerSideEncryption': 'AES256'} )
 
         print "v3.0"
-        print "created bucket " + bucket_name + " " + s
+        print "created file  " + bucket_name + " " + s
 
 
 if __name__ == '__main__':
