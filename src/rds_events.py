@@ -7,6 +7,7 @@ import datetime
 import time
 import calendar
 
+
 rds_db_names = []
 
 def exp_rds_paginator():
@@ -191,24 +192,23 @@ def describe_dbinstance(f, client, dbname):
                     else:
                         c = "    "
 
-                    s =  unicode(c) + unicode(k2) +  " = " + unicode(v2)
-
-                    formatted = "{0:4} {1:32}  = {2}".format( c, k2, v2 )
-                    #print s
-                #s = formatted
+                    formatted = "{:4} {:32}  = {}".format( c, k2, v2 )
+                    s = formatted
                     print formatted
-                    s += "\r\n"
-                    f.write(s) 
+                    formatted +=  "\r\n"
+                    f.write(formatted)
 
         s = "-------------------------  end describe_dbinstance  " + dbname + "------------------------- "
         print s
-        f.write( unicode(s) )
+        f.write( s )
         f.write('\r\n')
         f.write('\r\n')
         print ""
-    except Exception as e: # DBInstanceNotFoundFault as e:
+    except client.exceptions.DBInstanceNotFoundFault as e:
         print dbname, "not found. database has been deleted"
-        # print e
+    except Exception as e: # DBInstanceNotFoundFault as e:
+        print e
+        raise e
 
 
 def main():
@@ -230,6 +230,8 @@ def main():
     fname  = "/tmp/datafile"
     f = open(fname, 'w')
     #f = io.open('/tmp/datafile', 'w', newline='\r\n')
+
+    f.write( "{}\r\n".format(s) )
 
     if  upef_env == "RDS" or upef_env == "ALL":
         describe_events(f,duration)

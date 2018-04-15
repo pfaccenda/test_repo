@@ -1,11 +1,19 @@
 #! /usr/bin/python 
 
-import boto3    
-ec2client = boto3.client('ec2')
-response = ec2client.describe_instances()
-for reservation in response["Reservations"]:
-    for instance in reservation["Instances"]:
-        # This sample print will output entire Dictionary object
-        print(instance)
-        # This will print will output the value of the Dictionary key 'InstanceId'
-        print(instance["InstanceId"])
+message = "HelloPython v003"
+
+
+f = open("testfile", 'w')
+
+d = { u"name01": u"value01", u"name02" : u"value02"}
+c = "***"
+sout = ""
+for k,v in d.items():
+    #  print(k,v)
+    formatted = "{:4} {:8} {:8}\r\n".format(c, k, v)
+    print formatted
+    f.write( formatted )
+
+f.close()
+
+

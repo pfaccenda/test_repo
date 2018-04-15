@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "S3Bucket",
+    "ParameterValue": "upefbucket"
+  },
+  {
+    "ParameterKey": "S3Key",
+    "ParameterValue": "hello_python.zip"
+  }
+]

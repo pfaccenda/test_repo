@@ -1,0 +1,95 @@
+{
+  "Parameters": {
+      "S3Bucket" : {
+        "Description": "S3 bucket name",
+        "Type" : "String"
+      },
+
+      "S3Key" : {
+        "Description": "S3 file name",
+        "Type" : "String"
+      },
+
+  },
+
+  "Resources": {
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+        "Properties": {
+           "AssumeRolePolicyDocument": {
+             "Version": "2012-10-17",
+             "Statement": [{
+                 "Effect": "Allow",
+                 "Principal": {"Service": ["lambda.amazonaws.com"]},
+                 "Action": ["sts:AssumeRole"]
+             }]
+           },
+         "Policies": [{
+             "PolicyName": "upefLambdaPolicy",
+             "PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                      "Effect": "Allow",
+                      "Action": ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"],
+                      "Resource": "arn:aws:logs:*:*:*"
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": ["logs:DeleteLogGroup"],
+                      "Resource": {"Fn::Join":["", ["arn:aws:logs:", {"Ref":"AWS::Region"},":",{"Ref":"AWS::AccountId"}, ":log-group:/aws/lambda/*"]]}
+                    },
+
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "rds:ListTagsForResource",
+                            "rds:DescribeDBInstances",
+                            "rds:DescribeEvents"
+                        ],
+                        "Resource": "*"
+                    },
+
+                    {
+                         "Action": [
+                             "firehose:Describe*",
+                             "firehose:List*"
+                         ],
+                         "Effect": "Allow",
+                         "Resource": "*"
+                   },
+
+                   {
+                           "Effect": "Allow",
+                           "Action": "s3:*",
+                           "Resource": "*"
+                   }
+
+                ]
+              }
+            }]
+         }
+       },
+
+    "HelloWorldFn": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": "HelloWorldFn",
+        "Handler": "hello_python.lambda_handler",
+        "Role": { "Fn::GetAtt" : ["LambdaExecutionRole", "Arn"] },
+        "Environment": {
+          "Variables" :
+            { "NAME1": "VALUE1",
+              "NAME2": "VALUE2",
+              "UPEF":  { "Fn::GetAtt" : ["LambdaExecutionRole", "Arn"] }
+            }
+        },
+        "Code": {
+          "S3Bucket": { "Ref": S3Bucket },
+          "S3Key": { "Ref": S3Key },
+        },
+        "Runtime": "python2.7"
+      }
+    }
+   }
+}
