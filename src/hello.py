@@ -286,7 +286,3 @@ if __name__ == "__main__":
     s=subprocess.check_output(['/bin/ls', '-l',  fname])
     print (s)
 
-
-
-
-
