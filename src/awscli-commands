@@ -1,3 +1,5 @@
 
+# aws cli to deploy lambda
+
 aws cloudformation create-stack --stack-name upef-33 --template-body file://c:/cygwin/home/paul/test_repo\src\l
 ambda-cfn.template  --parameters file://c:/cygwin/home/paul/test_repo/src/lambda.params --capabilities CAPABILITY_IAM
