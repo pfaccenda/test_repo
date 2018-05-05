@@ -249,13 +249,6 @@ def main():
     #demo_event_3()
     demo_event_4()
 
-    d = {   "source": [ "aws.rds", "upef"  ]}
-    print_dict(d, "awsrdsevent")
-    print d['source'][0]
-    print_list(d['source'], "tag")
-    # s3_bucket_stuff()
-
-
 if __name__ == "__main__":
     ## main()
     print "hello"
